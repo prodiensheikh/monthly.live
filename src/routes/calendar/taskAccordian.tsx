@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { Fragment, useState } from "react"
 import { DailyTask } from "../../types/dailyTask"
 import { BiChevronDown, BiChevronUp } from "react-icons/bi"
 import { formatDailyTaskTime } from "./dateUtils"
@@ -49,7 +49,7 @@ export default function TaskAccordian({
   return (
     <div className="flex flex-col mt-4 max-h-full overflow-scroll gap-2 no-scrollbar">
       {tasks.map((task) => (
-        <>
+        <Fragment key={task._id}>
           <div
             key={task._id}
             className="flex flex-col"
@@ -188,7 +188,7 @@ export default function TaskAccordian({
               </div>
             )}
           </div>
-        </>
+        </Fragment>
       ))}
 
       <button

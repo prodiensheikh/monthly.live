@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { DAYS, getMonthEndDate, getMonthEndPadding, getMonthName, getMonthStartDate, getMonthStartPadding } from "./dateUtils"
+import { DAYS, compareWithToday, getMonthEndDate, getMonthEndPadding, getMonthName, getMonthStartDate, getMonthStartPadding } from "./dateUtils"
 import CalendarHeader from "./calendarHeader"
 import TaskDialog from "./taskDialog"
 import { DailyTask } from "../../types/dailyTask"
+import { getBackgroundColor } from "./calcUtils"
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState<Date>()
@@ -66,7 +67,6 @@ export default function Calendar() {
   const renderDays = () => {
     if (!monthStart || !monthEnd) return null
 
-    const today = new Date()
     const days = Array.from({ length: monthEnd.getDate() }, (_, index) => {
       const day = new Date(monthStart)
       day.setDate(index + 1)
@@ -80,11 +80,21 @@ export default function Calendar() {
         style={{
           height: 'calc(80vh / 7)',
           maxHeight: 'calc(80vmin / 7)',
+          backgroundColor: compareWithToday(date) < 0 ? dailyTasks[date.toDateString()]?.tasks.length ? getBackgroundColor(dailyTasks[date.toDateString()]?.percentage) : 'rgb(35,217,132)' : 'white',
         }}
         onClick={() => setSelectedDate(date)}
       >
-        {date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear() && (
+        {compareWithToday(date) === 0 && (
           <div className="absolute top-2 left-2 w-2 h-2 bg-primary-500 rounded-full" />
+        )}
+        {compareWithToday(date) === 0 && (
+          <div className="absolute top-1 right-2 rounded-full text-xs font-semibold"
+            style={{
+              color: getBackgroundColor(dailyTasks[date.toDateString()]?.percentage),
+            }}
+          >
+            {dailyTasks[date.toDateString()] ? (dailyTasks[date.toDateString()]?.percentage || 0) * dailyTasks[date.toDateString()]?.tasks.length : 0}/{dailyTasks[date.toDateString()] ? dailyTasks[date.toDateString()]?.tasks.length : 0}
+          </div>
         )}
         {date.getDate()}
       </div>
@@ -105,11 +115,11 @@ export default function Calendar() {
   const updateDailyTasks = useCallback((date?: Date, tasks?: DailyTask[]) => {
     if (!date) return
     if (!tasks) return
-    
+
     setDailyTasks((prev) => ({
       ...prev,
       [date.toDateString()]: {
-        percentage: tasks.filter((task) => task.isCompleted).length / tasks.length * 100,
+        percentage: tasks.filter((task) => task.isCompleted).length / tasks.length,
         tasks,
       }
     }))

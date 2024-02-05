@@ -1,6 +1,32 @@
 export const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
-export const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] as const;
-export const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+export const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+export const SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
 
 export const getMonthName = (date: Date, short?: boolean) => {
   const month = date.getMonth();
@@ -53,7 +79,7 @@ export const getMonthEndPadding = (date: Date) => {
 export const formatTaskDialogDate = (date: Date) => {
   // Example: "Sun, 1st Jan"
   const day = date.getDate();
-  
+
   let daySuffix = "th";
   if (day === 1 || day === 21 || day === 31) {
     daySuffix = "st";
@@ -67,7 +93,7 @@ export const formatTaskDialogDate = (date: Date) => {
   const monthName = getMonthName(date, true);
 
   return `${dayName}, ${day}${daySuffix} ${monthName}`;
-}
+};
 
 export const formatDailyTaskTime = (date: Date) => {
   // Example: "12:00 PM"
@@ -79,4 +105,17 @@ export const formatDailyTaskTime = (date: Date) => {
   const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
 
   return `${formattedHours}:${formattedMinutes} ${ampm}`;
-}
+};
+
+export const compareWithToday = (date: Date) => {
+  const today = new Date();
+  if (
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  ) {
+    return 0;
+  }
+
+  return date < today ? -1 : 1;
+};
