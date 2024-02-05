@@ -1,9 +1,15 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { DAYS, getMonthEndDate, getMonthEndPadding, getMonthName, getMonthStartDate, getMonthStartPadding } from "./dateUtils"
 import CalendarHeader from "./calendarHeader"
+import TaskDialog from "./taskDialog"
+import { DailyTask } from "../../types/dailyTask"
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState<Date>()
+  const [selectedDate, setSelectedDate] = useState<Date>()
+
+  const [loadingDailyTasks, setLoadingDailyTasks] = useState(true)
+  const [dailyTasks, setDailyTasks] = useState<Record<string, { percentage: number, tasks: DailyTask[] }>>({})
 
   const monthName = currentDate && getMonthName(currentDate)
   const year = currentDate && currentDate.getFullYear()
@@ -12,6 +18,21 @@ export default function Calendar() {
 
   const startPadding = useMemo(() => currentDate && getMonthStartPadding(currentDate), [currentDate])
   const endPadding = useMemo(() => currentDate && getMonthEndPadding(currentDate), [currentDate])
+
+  const getDailyTasks = useCallback(async () => {
+    try {
+      setLoadingDailyTasks(true)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoadingDailyTasks(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!monthStart) return
+    getDailyTasks()
+  }, [monthStart, getDailyTasks])
 
   useEffect(() => {
     const today = new Date()
@@ -55,11 +76,12 @@ export default function Calendar() {
     return days.map((date, index) => (
       <div
         key={`${date.getDate()}-${index}`}
-        className={`relative w-full flex items-center justify-center bg-white aspect-square p-2 hover:bg-gray-200 cursor-pointer`}
+        className={`relative w-full flex items-center justify-center bg-white aspect-square p-2 hover:bg-gray-200 cursor-pointer ${loadingDailyTasks ? 'animate-pulse' : ''}`}
         style={{
           height: 'calc(80vh / 7)',
           maxHeight: 'calc(80vmin / 7)',
         }}
+        onClick={() => setSelectedDate(date)}
       >
         {date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear() && (
           <div className="absolute top-2 left-2 w-2 h-2 bg-primary-500 rounded-full" />
@@ -80,25 +102,48 @@ export default function Calendar() {
     setCurrentDate(newDate)
   }
 
+  const updateDailyTasks = useCallback((date?: Date, tasks?: DailyTask[]) => {
+    if (!date) return
+    if (!tasks) return
+    
+    setDailyTasks((prev) => ({
+      ...prev,
+      [date.toDateString()]: {
+        percentage: tasks.filter((task) => task.isCompleted).length / tasks.length * 100,
+        tasks,
+      }
+    }))
+  }, [])
+
   if (!currentDate) return null
   return (
-    <div className="flex flex-col p-2 h-full justify-center">
-      <CalendarHeader
-        monthName={monthName ?? ''}
-        year={year ?? 0}
-        onPrevMonth={() => changeMonth('prev')}
-        onNextMonth={() => changeMonth('next')}
+    <>
+      <div className="flex flex-col p-2 h-full justify-center">
+        <CalendarHeader
+          monthName={monthName ?? ''}
+          year={year ?? 0}
+          onPrevMonth={() => changeMonth('prev')}
+          onNextMonth={() => changeMonth('next')}
+        />
+
+        <div className="grid grid-cols-7 mt-4">
+          {renderDaysHeader()}
+        </div>
+
+        <div className="grid grid-cols-7 gap-2 mt-2">
+          {renderPadding(startPadding)}
+          {renderDays()}
+          {renderPadding(endPadding)}
+        </div>
+      </div>
+
+      <TaskDialog
+        isOpen={!!selectedDate && !loadingDailyTasks}
+        onClose={() => setSelectedDate(undefined)}
+        selectedDate={selectedDate}
+        tasks={selectedDate ? dailyTasks[selectedDate.toDateString()]?.tasks ?? [] : []}
+        setTasks={(tasks) => updateDailyTasks(selectedDate, tasks)}
       />
-
-      <div className="grid grid-cols-7 mt-4">
-        {renderDaysHeader()}
-      </div>
-
-      <div className="grid grid-cols-7 gap-2 mt-2">
-        {renderPadding(startPadding)}
-        {renderDays()}
-        {renderPadding(endPadding)}
-      </div>
-    </div>
+    </>
   )
 }
